@@ -84,13 +84,31 @@ C=(correctrt-correctrtM).^2;
 E=(errorrt-errorrtM).^2;
 Pc=pathCorret(find(C==min(C)),:);
 Pe=pathError(find(E==min(E)),:);
-% Pc=pathCorret(find(correctrt==correctrtM),:);
-% Pe=pathError(find(errorrt==errorrtM),:);
+
+
+x_ax    = 0:nsteps;
+X_plot  = [x_ax, fliplr(x_ax)];
+Y_plot_C  = [Pc(1,:)-1.96.*sd*sqrt(dt), fliplr(Pc(1,:)+1.96.*sd*sqrt(dt))];
+Y_plot_E  = [Pe(1,:)-1.96.*sd*sqrt(dt), fliplr(Pe(1,:)+1.96.*sd*sqrt(dt))];
+
+
 plot(Pc(1,:)','g');
 hold on;
 plot(Pe(1,:)','r');
 xlabel('Time (milliseconds)');
 ylabel('Evidence');
+
+
+fill(X_plot, Y_plot_C , 1,....
+        'facecolor','green', ...
+        'edgecolor','none', ...
+        'facealpha', 0.3);
+fill(X_plot, Y_plot_E , 1,....
+        'facecolor','red', ...
+        'edgecolor','none', ...
+        'facealpha', 0.3);
+
+
 set(gca,'YLim',[-0.5 criterion+0.5]);
 set(gca,'XLim',[0 500]);
 xticks(linspace(0,500,11));
@@ -98,7 +116,7 @@ xticklabels(linspace(500,1000,11));
 correctTXT=['median correct RT = ' num2str(correctrtM) ' ms'];
 errorTXT=['median error RT = ' num2str(errorrtM) ' ms'];
 
-legend(correctTXT,errorTXT);
+legend(correctTXT,errorTXT,'95% CI in correct path','95% CI in error path');
 title('(B) median path with bias variability - FAST errors')
 %Make a histogram of mean random walks. 
 
