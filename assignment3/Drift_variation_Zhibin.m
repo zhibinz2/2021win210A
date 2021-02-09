@@ -17,107 +17,88 @@ bias = beta*criterion; %ACTUAL BIAS
 %set random number seed 
 rng(19680104);
 
-nvariations=100; %BUMBER OF VARIATIONS TO DRAW FROM A DISTRIBUTION
-Mu=rand(1,nvariations); % This is a vector of random draws from a random distribution of the drift rates
-Accuracy=zeros(1,nvariations); % This is a vector of the acuuracy for each random drift rate
-Prerror=ones(1,nvariations); % This is a vector of the probability for error response
+% Mu=rand(1,ntrials); % random distribution
+% Mu=0.5+0.5*(0.5-Mu); % Set Mu between 0.25 to 0.75
+% hist(Mu); % examine the distribution of Mu
 
-correctrtM=zeros(1,nvariations); 
-errorrtM=zeros(1,nvariations);
+% Mu=normrnd(0.5*dt,2*sqrt(dt),[1, ntrials]);% normal distribution
+% Mu=0.5+Mu;
+% hist(Mu); % examine the distribution of Mu
 
-%LOOP OVER nvariationts of drift rate mu and then ntrials.  
-for v = 1:nvariations
-    
+Mu=linspace(0.1,0.9,ntrials); % uniform distribution
+% hist(Mu); % examine the distribution of Mu
+
+% close all;
+
 %OUTPUT VARIABLES
 sample = zeros(1,nsteps+1);   %This is a single random draw from normal distribution
 path = zeros(ntrials,nsteps+1); %This is all the random walks
 rt = zeros(ntrials,1);  %These are the rts across trials 
 correct = zeros(ntrials,1); %This is accuracy data. ZERO IS WRONG, ONE IS RIGHT  
-% clear output in previous loop
-clear errorrt;
-clear correctrt;
-    
-    for j = 1:ntrials
-        goodpath = 0;
-        while goodpath == 0 
-            draw = normrnd(Mu(v)*dt,sd*sqrt(dt),[1,nsteps]);  %DRAW A WALK
-            sample(1) = bias; %START AT BIAS
-            sample(2:nsteps+1) = draw; 
-            walk = cumsum(sample); %SUM THE WALK.   
-            crossbnd = find((walk > criterion) |(walk < 0)); %TEST BOTH BOUNDARIES  
-            if ~isempty(crossbnd) %TEST IF IT CROSSED ONE OF THE BOUNDARIES AT LEAST
-                goodpath = 1; %WALK IS GOOD, SET TO 1 TO EXIT WHILE LOOP
-                path(j,:) = walk; %SAVE THE WALK
-            else
-                display('Bad Walk') %NOTIFY BAD WALK AND DRAW AGAIN LOWER
-            end;
-        end;
-        rt(j) = crossbnd(1);  %RT IS FIRST CROSSING
-        if path(j,rt(j)) > criterion  %TEST IF CORRECT
-            path(j,rt(j):end) = criterion; %SET THE REST OF WALK TO BOUNDARY
-            correct(j) = 1; %INDICATE CORRECT TRIAL
-        else %TRIALIS INCORRECT
-            path(j,rt(j):end) = 0; %SET THE REST OF WALK TO ZERO. 
-        end; 
-        %Add Non-decision time
-        rt(j) = rt(j) + ndt/dt;	
-    end
-   
-% compute rt mean
-rtM(v)=mean(rt);
 
+
+for j = 1:ntrials
+    goodpath = 0;
+    while goodpath == 0 
+        draw = normrnd(Mu(j)*dt,sd*sqrt(dt),[1,nsteps]);  %DRAW A WALK
+        sample(1) = bias; %START AT BIAS
+        sample(2:nsteps+1) = draw; 
+        walk = cumsum(sample); %SUM THE WALK.   
+        crossbnd = find((walk > criterion) |(walk < 0)); %TEST BOTH BOUNDARIES  
+        if ~isempty(crossbnd) %TEST IF IT CROSSED ONE OF THE BOUNDARIES AT LEAST
+            goodpath = 1; %WALK IS GOOD, SET TO 1 TO EXIT WHILE LOOP
+            path(j,:) = walk; %SAVE THE WALK
+        else
+            display('Bad Walk') %NOTIFY BAD WALK AND DRAW AGAIN LOWER
+        end;
+    end;
+    rt(j) = crossbnd(1);  %RT IS FIRST CROSSING
+    if path(j,rt(j)) > criterion  %TEST IF CORRECT
+        path(j,rt(j):end) = criterion; %SET THE REST OF WALK TO BOUNDARY
+        correct(j) = 1; %INDICATE CORRECT TRIAL
+    else %TRIALIS INCORRECT
+        path(j,rt(j):end) = 0; %SET THE REST OF WALK TO ZERO. 
+    end; 
+    %Add Non-decision time
+    rt(j) = rt(j) + ndt/dt;	
+end
+
+
+%compute accuracy
+accuracy = mean(correct);  %COMPUTER FRACTION CORRECT
 
 % RT for correct and error response
 errorrt = rt(find(correct == 0));  % THIS IS JUST THE INCORRECT TRIALS
 correctrt = rt(find(correct == 1)); %THIS IS JUST THE CORRECT TRIALS
 % mean RT for correct and error response
-correctrtM(v)=mean(correctrt);
-errorrtM(v)=mean(errorrt);
+correctrtM=median(correctrt);
+errorrtM=median(errorrt); % should be slow errors
 
-% compute accuracy (Pr for correct)
-Accuracy(v) = mean(correct);  %COMPUTER FRACTION CORRECT
-% Pr for error
-Prerror(v)=1-Accuracy(v);
 
-end
-
-% Calculate the weighted RT for correct and error response
-correctrtW=zeros(1,nvariations); 
-errorrtW=zeros(1,nvariations); 
-% Sum the probabilities for correct and error response
-sumC=sum(Accuracy);
-sumE=sum(Prerror);
-for v = 1:nvariations
-correctrtW(v)=correctrtM(v)*Accuracy(v)/sumC;
-errorrtW(v)=errorrtM(v)*Prerror(v)/sumE;
-end
-% Calculate Weighted mean RT
-correctrtWM=sum(correctrtW); 
-errorrtWM=sum(errorrtW); % should be a slow error
-% correctrtWM = 759.5039
-% errorrtWM = 762.2095
-
-%%
-% plot the Acuurancy against each random drift rate
-figure;
-subplot(2,2,1);
-plot(Mu, Accuracy,'gx');
-xlabel('drift rate'); ylabel('Probability');legend();
-title('(A). Probability vs. drift rate variability');
+%plot all the random walks. 
+subplot(1,2,1);
+pathCorret=path(find(correct == 1),:);
+pathError=path(find(correct == 0),:);
+C=(correctrt-correctrtM).^2;
+E=(errorrt-errorrtM).^2;
+Pc=pathCorret(find(C==min(C)),:);
+Pe=pathError(find(E==min(E)),:);
+plot(Pc(1,:)','g');
 hold on;
-plot(Mu, Prerror, 'rx');
-legend('Probability for correct response','Probability for error response');
-hold off;
+plot(Pe(1,:)','r');
+xlabel('Time (milliseconds)');
+ylabel('Evidence');
+set(gca,'YLim',[-0.5 criterion+0.5]);
+set(gca,'XLim',[0 500]);
+xticks(linspace(0,500,11));
+xticklabels(linspace(500,1000,11));
+correctTXT=['median correct RT = ' num2str(correctrtM) ' ms'];
+errorTXT=['median error RT = ' num2str(errorrtM) ' ms'];
+legend(correctTXT,errorTXT);
+title('(A) median path with drift rate variability - SLOW errors')
+%Make a histogram of mean random walks. 
 
-% plot the RT against each random drift rate
-subplot(2,2,2);
-plot(Mu, rtM,'x');
-xlabel('drift rate'); ylabel('RT mean');
-title('(B). RT mean vs. drift rate variability - slow errors');
-hold on;
-yline(correctrtWM,'g-','Weighted mean RT - correct','LabelVerticalAlignment','bottom');
-yline(errorrtWM,'r-','Weighted mean RT - error');
-label('Weighted mean RT - error')
-hold off;
+
+
 
 
