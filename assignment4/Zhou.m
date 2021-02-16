@@ -37,7 +37,7 @@ LAMBDA = (2*pi*P)/totalP; LAMBDAS = repmat(LAMBDA,totalP,1);
 
 % This gives us the mean firing rate of each 'neuron' at each location
 % given the current input. Using the above parameters, implement Eq 6
-f = K*C*exp((cos(PT-THETAS)-1)/(sT.^2)+((cos(PL-LAMBDAS)-1)/(sL.^2)))+v;
+f = K*C*exp((cos(T-THETAS)-1)/(sT.^2)+((cos(L-LAMBDAS)-1)/(sL.^2)))+v;
 
 for n = 1:N
     % To initialize the network, we need to add random noise to those mean
@@ -71,7 +71,7 @@ for n = 1:N
         for j = 1:totalP
 
             % Compute weights w in a matrix, Eq 8
-            w{i,j} = Kw*exp((cos(2*pi*(THETAS(i,j)-PT(i,j))/20)-1)/dw^2+(cos(2*pi*(LAMBDAS(i,j)-PL(i,j))/20)-1)/dw^2);
+            w{i,j} = Kw*exp((cos(2*pi*(THETA(i)-T)/20)-1)/dw^2+(cos(2*pi*(LAMBDA(j)-L)/20)-1)/dw^2);
 
             % Next, compute the us which deal with excitatory modifications of 
             % signal, and represent the activity of everybody else in the
