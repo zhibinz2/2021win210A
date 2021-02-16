@@ -16,7 +16,7 @@ sT =  0.38;
 sL =  0.38; % set to be equal to sigT to match the paper
 mu = 0.002;
 Kw =  1;
-dw =  [0.17 0.718]; % Systematically varied between 0.14 and 0.718 (p. 745)
+dw =0.14+(0.718-0.14)*rand(1); % Systematically varied between 0.14 and 0.718 (p. 745)
 S = 5;
 sn = 5; % For Gaussian noise with fixed variance
 
@@ -37,7 +37,7 @@ LAMBDA = (2*pi*P)/totalP; LAMBDAS = repmat(LAMBDA,totalP,1);
 
 % This gives us the mean firing rate of each 'neuron' at each location
 % given the current input. Using the above parameters, implement Eq 6
-f = K*C*exp((cos(mean(T-THETA))-1)/(sT^2)+((cos(mean(L-LAMBDA))-1)/(sL^2)))+v;
+f = K*C*exp((cos(PT-THETAS)-1)/(sT.^2)+((cos(PL-LAMBDAS)-1)/(sL.^2)))+v;
 
 for n = 1:N
     % To initialize the network, we need to add random noise to those mean
@@ -71,19 +71,19 @@ for n = 1:N
         for j = 1:totalP
 
             % Compute weights w in a matrix, Eq 8
-            w{i,j} = Kw*exp((cos(2*pi*()/alpha)-1)/dw^2+(cos(2*pi*()/alpha)-1)/dw^2);
+            w{i,j} = Kw*exp((cos(2*pi*(THETAS(i,j)-PT(i,j))/20)-1)/dw^2+(cos(2*pi*(LAMBDAS(i,j)-PL(i,j))/20)-1)/dw^2);
 
             % Next, compute the us which deal with excitatory modifications of 
             % signal, and represent the activity of everybody else in the
             % network except the current neuron. Eq. 1
-            u(i,j,2) = sum(w{i,j}*alpha);
+            u(i,j,2) = w{i,j}*alpha(i,j);
 
         end
     end
 
     % And finally, do the divisive normalization for the output on the next
     % timestep, Eq 2
-    o(:,:,2) = u(i,j,2)^2/(S+mu*sum(u));
+    o(:,:,2) = o(:,:,1).^2./(S+mu*sum(u(:,:,2),'all'));
 
     % Make some plots if n = 1, to recreate Figure 2
     if n == 1 
@@ -131,9 +131,9 @@ for n = 1:N
     % need to iterate equations 1 and 2 then? So we use the output after
     % divisive normalization.
     % Sum over orientation (j) and spatial frequency (k)
-    z = 
+    z =o(:,:,1).* exp(sqrt(-1)*THETAS); 
     T_hat = angle(z);
-    error(n) = 
+    error(n) = sum((T_hat - THETAS).^2,'all');
 
 end
 
